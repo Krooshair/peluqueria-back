@@ -1,0 +1,12 @@
+# .gitignore
+node_modules/
+*.log
+*.tmp
+/bin
+/out
+/target
+.idea/workspace.xml
+yarn.lock
+package-lock.json
+*.js
+*.js.map
