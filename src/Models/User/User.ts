@@ -1,6 +1,7 @@
 import IUser from './IUser'
 import Conexion from '../Conexion'
 import { RowDataPacket } from 'mysql2'
+import bcrypt from 'bcryptjs'
 
 class User {
   private db: Conexion
@@ -20,8 +21,11 @@ class User {
         return {user: [], error: 'El correo o el usuario ya estan registrados'}
       }
 
+      const saltPass = await bcrypt.genSalt(10)
+      const hashPass = await bcrypt.hash(data.password, saltPass)
+
       const sqlInsert = 'INSERT INTO `usuario` (`usuario`, `correo`, `nombre`, `apellido`, `clave`, `id_rol`) VALUES (?,?,?,?,?,?)'
-      const values = [data.username, data.email, data.name, data.lastname, data.password, data.id_role]
+      const values = [data.username, data.email, data.name, data.lastname, hashPass, data.id_role]
       await cn.execute<RowDataPacket[]>(sqlInsert, values)
 
       const sqlSelect = 'SELECT * FROM `usuario` WHERE `id` = LAST_INSERT_ID()';
@@ -39,7 +43,7 @@ class User {
     }
   }
 
-  public async filterId(id: number): Promise<RowDataPacket[] | string>{
+  public async filterId(id: number): Promise<{user: RowDataPacket[], error: string}>{
     let cn;
     try {
       await this.db.createConnection();
@@ -47,9 +51,9 @@ class User {
       const sql = 'SELECT * FROM `usuario` WHERE id = ?';
       const [results] = await cn.execute<RowDataPacket[]>(sql, [id]);
       if(results.length === 0){
-        return 'El usuario no existe'
+        return {user: [], error: 'El usuario no existe'}
       }
-      return results
+      return {user: results, error: ''}
     } catch (error) {
       console.log('Ocurrio un error al buscar por id: ', error)
       throw error
@@ -71,9 +75,13 @@ class User {
       const [results] = await cn.execute<RowDataPacket[]>(sql, [email])
       if(results.length === 0){
         return {user: [], error: 'El correo no existe'}
-      }else if(results[0].clave !== password){
+      }
+
+      const comparePass = await bcrypt.compare(password, results[0].clave)
+      if(!comparePass){
         return {user: [], error: 'La clave es incorrecta'}
       }
+
       return { user: results, error: '' }
     } catch (error) {
       console.log('Hubo un error al comparar credenciales: ', error)

@@ -1,15 +1,19 @@
 import { Request, Response } from "express"
 import User from "../Models/User/User"
 import IUser from "../Models/User/IUser"
+import Jwt from "../Library/Jwt";
 
 class UserController {
 
   private user: User;
+  private jwt: Jwt;
 
   constructor() {
     this.user = new User();
+    this.jwt = new Jwt()
     this.register = this.register.bind(this);
     this.login = this.login.bind(this);
+    this.logout = this.logout.bind(this);
   }
 
   public async register(req: Request, res: Response){
@@ -20,6 +24,11 @@ class UserController {
         return res.status(400).send(execute.error)
       }
       const user = execute.user[0]
+
+      const tk = await this.jwt.createToken({id: execute.user[0].id},'SECRET',{expiresIn: '1d'})
+
+      res.cookie('token', tk)
+
       res.json({
         username: user.usuario,
         email: user.correo,
@@ -40,7 +49,11 @@ class UserController {
       if(execute.error){
         return res.status(404).send(execute.error)
       }
+
       const user = execute.user[0]
+      const tk = await this.jwt.createToken({id: execute.user[0].id},'SECRET',{expiresIn: '1d'})
+
+      res.cookie('token', tk)
       res.json({
         username: user.usuario,
         email: user.correo,
@@ -50,6 +63,23 @@ class UserController {
       })
     } catch (error) {
       console.log('Hubo un error al iniciar sesion: ', error)
+      res.status(400).send(error)
+    }
+  }
+
+  public async logout(req: Request, res: Response){
+    try {
+      const cookies = req.cookies
+      console.log(cookies)
+      if(!cookies.token){
+        return res.status(400).send('No se encontro ninguna sesion abierta')
+      }
+      res.cookie('token', '', {
+        expires: new Date(0)
+      })
+      res.send('Sesion cerrada')
+    } catch (error) {
+      console.log('Hubo un error al cerrar sesion: ', error)
       res.status(400).send(error)
     }
   }
