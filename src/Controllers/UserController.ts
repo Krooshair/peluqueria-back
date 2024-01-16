@@ -44,14 +44,20 @@ class UserController {
 
   public async login(req: Request, res: Response){
     try {
-      const {email, password} = req.body
+      const {email, password, isRemember} = req.body
       const execute = await this.user.findUser(email, password)
       if(execute.error){
         return res.status(404).send(execute.error)
       }
 
       const user = execute.user[0]
-      const tk = await this.jwt.createToken({id: execute.user[0].id},'SECRET',{expiresIn: '1d'})
+      let tk: string;
+
+      if(isRemember){
+        tk = await this.jwt.createToken({id: execute.user[0].id},'SECRET',{expiresIn: '7d'})
+      }else{
+        tk = await this.jwt.createToken({id: execute.user[0].id},'SECRET',{expiresIn: '1d'})
+      }
 
       res.cookie('token', tk)
       res.json({
