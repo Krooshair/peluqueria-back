@@ -1,7 +1,7 @@
-import jwt from 'jsonwebtoken'
+import jwt, { JwtPayload } from 'jsonwebtoken'
 
 class Jwt {
-  public createToken(payload: object, secret: string, exp: object): Promise<string>{
+  public createToken(payload: JwtPayload, secret: string, exp: object = {}): Promise<string>{
     return new Promise((resolve, rejects) => {
       jwt.sign(payload,secret,exp,(err, token) => {
         if(err){
@@ -12,6 +12,11 @@ class Jwt {
         }
       })
     })
+  }
+
+  public verifyToken(token: string, secret: string): JwtPayload | string{
+    const decoded = jwt.verify(token, secret)
+    return decoded
   }
 }
 
