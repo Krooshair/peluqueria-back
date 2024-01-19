@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express"
-import { MyRequest } from "../types";
+import { MyRequest, VerifyTk } from "../types";
 import User from "../Models/User/User"
 import IUser from "../Models/User/IUser"
 import Jwt from "../Library/Jwt";
@@ -15,6 +15,8 @@ class UserController {
     this.register = this.register.bind(this);
     this.login = this.login.bind(this);
     this.logout = this.logout.bind(this);
+    this.verify = this.verify.bind(this);
+    this.profile = this.profile.bind(this);
   }
 
   public async register(req: Request, res: Response){
@@ -60,8 +62,8 @@ class UserController {
       res.json({
         username: user.usuario,
         email: user.correo,
-        nombre: user.nombre,
-        apellido: user.apellido,
+        name: user.nombre,
+        lastname: user.apellido,
         id_role: user.id_rol
       })
     } catch (error) {
@@ -89,10 +91,37 @@ class UserController {
   public async verify(req: MyRequest, res: Response, next: NextFunction){
     try{
       const {token} = req.cookies
-      const decoded = this.jwt.verifyToken(token, 'SECRET')
+      if(!token){
+        return res.status(400).send('El token no existe')
+      }
+      const decoded = await this.jwt.verifyToken(token, 'SECRET')
       req.user = decoded
       next()
     }catch(error){
+      console.log(error)
+      res.status(400).send(error)
+    }
+  }
+
+  public async profile(req: MyRequest, res: Response) {
+    try {
+      if(typeof req.user === 'object' && req.user !== null){
+        const {id}: VerifyTk = req.user
+        if(!id){
+          return res.status(400).send('No se encontro el identificador del usuario')
+        }
+        const execute = await this.user.filterId(id)
+        const user = execute.user[0]
+        res.json({
+          username: user.usuario,
+          email: user.correo,
+          name: user.nombre,
+          lastname: user.apellido,
+          id_role: user.id_rol
+        })
+      }
+    } catch (error) {
+      console.log(error)
       res.status(400).send(error)
     }
   }

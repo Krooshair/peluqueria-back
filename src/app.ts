@@ -15,6 +15,6 @@ app.use(express.json())
 app.use(cookieParser())
 app.use('/api', UserRoutes)
 
-app.listen(3000, () => {
-  console.log('Servidor iniciado en el puerto 3000')
+app.listen(4000, () => {
+  console.log('Servidor iniciado en el puerto 4000')
 })

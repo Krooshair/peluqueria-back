@@ -14,9 +14,20 @@ class Jwt {
     })
   }
 
-  public verifyToken(token: string, secret: string): JwtPayload | string{
-    const decoded = jwt.verify(token, secret)
-    return decoded
+  public verifyToken(token: string, secret: string): Promise<JwtPayload | string>{
+    return new Promise((resolve, reject) => {
+      jwt.verify(token, secret, (err, decoded) => {
+        if (err) {
+          reject(err);
+        } else {
+          if (decoded) {
+            resolve(decoded);
+          } else {
+            reject(new Error('No se pudo decodificar el token'));
+          }
+        }
+      });
+    });
   }
 }
 
